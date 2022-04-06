@@ -407,7 +407,7 @@ write_excel_csv(fit_clf_01_summary, "fit_clf_01_summary.csv")
 #         )
 #       ),
 #     province = dplyr::case_when(
-#       province_id == 1 ~ rownames(Y)[1],
+#       province_id == 1 ~ as.character(rownames(Y)[1]),
 #       province_id == 2 ~ as.character(rownames(Y)[2]),
 #       province_id == 3 ~ as.character(rownames(Y)[3]),
 #       province_id == 4 ~ as.character(rownames(Y)[4]),
@@ -564,11 +564,189 @@ ggsave(
   height = 500, 
   units = "mm"
   )
-# 
-# 
-##
-### --- END --- ###
-##
+
+
+#
+## --- END --- ###
 #
 
+# 観測ノイズと状態ノイズ密度プロットを描く
+# 分析結果を読み込む
+fit_clf_01 <- readRDS("fit_clf_01.rds")
+# サンプルをデータフレーム形式で得る。
+# もともと行列形式であるものをデータフレームにしただけ。
+# なのでちっともtidyではないのよ
+fit_clf_01_sample <- 
+  fit_clf_01$draws(format = "df")
+# tidyなデータセットに整形する
+fit_clf_01_sample_df <- 
+  fit_clf_01_sample %>% 
+  tidyr::pivot_longer(
+    # 対象外にする列名はあらかじめ調べておく
+    cols = -c(".chain", ".iteration", ".draw"),
+    names_to = "variable",
+    values_to = "number"
+  ) %>% 
+  # 累積対数確率密度は使わないから外す
+  dplyr::filter(variable != "lp__") %>% 
+  dplyr::mutate(
+    variable = factor(variable)
+  ) %>% 
+  data.table::setnames(
+    c("chain","iteration","draw","variable","number")
+  )
+# 作図する
+# そのまえに必要なデータを取り出す
+# 今回はs_x（状態ノイズ）とs_r（観測誤差）
+fit_clf_01_sample_df_sd <- 
+  fit_clf_01_sample_df %>% 
+  dplyr::filter(
+    stringr::str_detect(variable, "(^s[:punct:])")
+  ) %>% 
+  dplyr::mutate(
+    variable = stringr::str_replace(variable, pattern = "_", replacement = "")
+    ) %>%
+    dplyr::mutate(
+      parameter = str_extract(variable, "(.+)(?=\\[)"),
+      province_id = as.numeric(str_extract(variable, "(?<=[:punct:])(.+)(?=\\])"))
+    ) %>%
+  dplyr::mutate(
+    province = dplyr::case_when(
+      province_id == 1 ~ as.character(rownames(Y)[1]),
+      province_id == 2 ~ as.character(rownames(Y)[2]),
+      province_id == 3 ~ as.character(rownames(Y)[3]),
+      province_id == 4 ~ as.character(rownames(Y)[4]),
+      province_id == 5 ~ as.character(rownames(Y)[5]),
+      province_id == 6 ~ as.character(rownames(Y)[6]),
+      province_id == 7 ~ as.character(rownames(Y)[7]),
+      province_id == 8 ~ as.character(rownames(Y)[8]),
+      province_id == 9 ~ as.character(rownames(Y)[9]),
+      province_id == 10 ~ as.character(rownames(Y)[10]),
+      province_id == 11 ~ as.character(rownames(Y)[11]),
+      province_id == 12 ~ as.character(rownames(Y)[12]),
+      province_id == 13 ~ as.character(rownames(Y)[13]),
+      province_id == 14 ~ as.character(rownames(Y)[14]),
+      province_id == 15 ~ as.character(rownames(Y)[15]),
+      province_id == 16 ~ as.character(rownames(Y)[16]),
+      province_id == 17 ~ as.character(rownames(Y)[17]),
+      province_id == 18 ~ as.character(rownames(Y)[18]),
+      province_id == 19 ~ as.character(rownames(Y)[19]),
+      province_id == 20 ~ as.character(rownames(Y)[20]),
+      province_id == 21 ~ as.character(rownames(Y)[21]),
+      province_id == 22 ~ as.character(rownames(Y)[22]),
+      province_id == 23 ~ as.character(rownames(Y)[23]),
+      province_id == 24 ~ as.character(rownames(Y)[24]),
+      province_id == 25 ~ as.character(rownames(Y)[25]),
+      province_id == 26 ~ as.character(rownames(Y)[26]),
+      province_id == 27 ~ as.character(rownames(Y)[27]),
+      province_id == 28 ~ as.character(rownames(Y)[28]),
+      province_id == 29 ~ as.character(rownames(Y)[29]),
+      province_id == 30 ~ as.character(rownames(Y)[30]),
+      province_id == 31 ~ as.character(rownames(Y)[31]),
+      province_id == 32 ~ as.character(rownames(Y)[32]),
+      province_id == 33 ~ as.character(rownames(Y)[33]),
+      province_id == 34 ~ as.character(rownames(Y)[34]),
+      province_id == 35 ~ as.character(rownames(Y)[35]),
+      province_id == 36 ~ as.character(rownames(Y)[36]),
+      province_id == 37 ~ as.character(rownames(Y)[37]),
+      province_id == 38 ~ as.character(rownames(Y)[38]),
+      province_id == 39 ~ as.character(rownames(Y)[39]),
+      province_id == 40 ~ as.character(rownames(Y)[40]),
+      province_id == 41 ~ as.character(rownames(Y)[41]),
+      province_id == 42 ~ as.character(rownames(Y)[42]),
+      province_id == 43 ~ as.character(rownames(Y)[43]),
+      province_id == 44 ~ as.character(rownames(Y)[44]),
+      province_id == 45 ~ as.character(rownames(Y)[45]),
+      province_id == 46 ~ as.character(rownames(Y)[46]),
+      province_id == 47 ~ as.character(rownames(Y)[47]),
+      province_id == 48 ~ as.character(rownames(Y)[48]),
+      province_id == 49 ~ as.character(rownames(Y)[49]),
+      province_id == 50 ~ as.character(rownames(Y)[50]),
+      province_id == 51 ~ as.character(rownames(Y)[51]),
+      province_id == 52 ~ as.character(rownames(Y)[52]),
+      province_id == 53 ~ as.character(rownames(Y)[53]),
+      province_id == 54 ~ as.character(rownames(Y)[54]),
+      province_id == 55 ~ as.character(rownames(Y)[55]),
+      province_id == 56 ~ as.character(rownames(Y)[56]),
+      province_id == 57 ~ as.character(rownames(Y)[57]),
+      province_id == 58 ~ as.character(rownames(Y)[58]),
+      province_id == 59 ~ as.character(rownames(Y)[59]),
+      province_id == 60 ~ as.character(rownames(Y)[50]),
+      province_id == 61 ~ as.character(rownames(Y)[61]),
+      province_id == 62 ~ as.character(rownames(Y)[62]),
+      province_id == 63 ~ as.character(rownames(Y)[63]),
+      province_id == 64 ~ as.character(rownames(Y)[64]),
+      province_id == 65 ~ as.character(rownames(Y)[65]),
+      province_id == 66 ~ as.character(rownames(Y)[66]),
+      province_id == 67 ~ as.character(rownames(Y)[67]),
+      province_id == 68 ~ as.character(rownames(Y)[68]),
+      province_id == 69 ~ as.character(rownames(Y)[69]),
+      province_id == 70 ~ as.character(rownames(Y)[70]),
+      province_id == 71 ~ as.character(rownames(Y)[71]),
+      province_id == 72 ~ as.character(rownames(Y)[72]),
+      province_id == 73 ~ as.character(rownames(Y)[73]),
+      province_id == 74 ~ as.character(rownames(Y)[74]),
+      province_id == 75 ~ as.character(rownames(Y)[75]),
+      province_id == 76 ~ as.character(rownames(Y)[76]),
+      province_id == 77 ~ as.character(rownames(Y)[77]),
+      province_id == 78 ~ as.character(rownames(Y)[78]),
+      province_id == 79 ~ as.character(rownames(Y)[79]),
+      province_id == 80 ~ as.character(rownames(Y)[80]),
+      province_id == 81 ~ as.character(rownames(Y)[81]),
+      province_id == 82 ~ as.character(rownames(Y)[82]),
+      province_id == 83 ~ as.character(rownames(Y)[83]),
+      province_id == 84 ~ as.character(rownames(Y)[84]),
+      province_id == 85 ~ as.character(rownames(Y)[85]),
+      province_id == 86 ~ as.character(rownames(Y)[86]),
+      province_id == 87 ~ as.character(rownames(Y)[87]),
+      province_id == 88 ~ as.character(rownames(Y)[88]),
+      province_id == 89 ~ as.character(rownames(Y)[89]),
+      province_id == 90 ~ as.character(rownames(Y)[90]),
+      province_id == 91 ~ as.character(rownames(Y)[91]),
+      province_id == 92 ~ as.character(rownames(Y)[92]),
+      province_id == 93 ~ as.character(rownames(Y)[93]),
+      province_id == 94 ~ as.character(rownames(Y)[94]),
+      province_id == 95 ~ as.character(rownames(Y)[95]),
+      province_id == 96 ~ as.character(rownames(Y)[96]),
+      province_id == 97 ~ as.character(rownames(Y)[97]),
+      TRUE ~ "hoge"
+      )
+    ) %>%
+  dplyr::select(-province_id) %>%
+  dplyr::mutate(
+    province = factor(province),
+  )
+fit_clf_01_sample_df_sd
+saveRDS(fit_clf_01_sample_df_sd,"fit_clf_01_sample_df_sd.rds")
+# 保存した結果を読み込む
+fit_clf_01_sample_df_sd <- readRDS("fit_clf_01_sample_df_sd.rds")
+# 作図する
+density_fit_clf_01_sample_df_sx <- 
+  fit_clf_01_sample_df_sd %>% 
+  dplyr::filter(parameter == "sx" & iteration >= 500) %>% 
+  ggplot(
+    aes(
+      x = number, y = province, fill = province)
+  ) +
+  geom_density_ridges() +
+  scale_fill_viridis(discrete = TRUE) +
+  labs(
+    title = "Estimated variance by province",
+    x = "Estimated SD of state error",
+    y = "Province"
+  ) +
+  theme_ridges() +
+  theme(legend.position = "none")
+ggsave(
+  "density_fit_clf_01_sample_df_sx.pdf", 
+  plot = density_fit_clf_01_sample_df_sx, 
+  width = 500, 
+  height = 500, 
+  units = "mm"
+  )
 
+#
+##
+### END --- ###
+##
+#
