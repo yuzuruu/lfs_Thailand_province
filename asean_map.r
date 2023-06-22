@@ -1,73 +1,59 @@
 # ##################################################################
-# タイとASEAN重ね書き地図だよーん
-# 2022年6月27日　
-# 宇都宮　譲
-# （長崎大学経済学部）
-# めんどうくさいから、ぜんぶコメントは日本語だよーん
+# Map of Thailand and ASEAN
+# Rev. 22nd. June 2023
+# Yuzuru Utsunomiya, Ph. D.
+# Faculty of Economics, Nagaski University
 # ##################################################################
-# ライブラリを読み込む
+# read library
 library(tidyverse)
 library(sf)
 library(khroma)
 library(viridis)
 library(ggimage)
 library(ggrepel)
-library(tmap)
-library(tmaptools)
 
-# ASEANと周辺国地図をつくる
-# シェープファイルを読み込む
-# シェープファイルがあるフォルダ内にあるファイルリスト取得
+# make map of ASEAN and surroundings
+# read shapefiles
+# obtain file list by country
 file_names_shape_0 <- 
-  data_frame(
+  dplyr::tibble(
     file_names = list.files(
       "../shapefiles/shapefiles_asean+4_merged"
       )
     ) %>% 
-  # 国境線レベルのシェープファイルだけを取り出す
-  # 末尾が0であるファイルが該当する
+  # administrative boundaries of countries
+  # tail No.: 0
   dplyr::filter(
-    # stringr::str_detect()は大変使い勝手がよい関数だす
     stringr::str_detect(
       .$file_names, 
       "0.shp"
       )
     ) %>% 
-  # 連続読込用にパスとなる文字列を作成
+  # for reading files continuously
   dplyr::mutate(
     file_names = paste0(
       "../shapefiles/shapefiles_asean+4_merged/", 
       file_names
       )
     )
-# シェープファイル連続読込
+# read shapefiles
 asean_4_boundary <- 
   file_names_shape_0 %>% 
-  # purrr:map()はとっても便利な繰り返し処理用関数だす
   dplyr::mutate(
-    # map_dfr()はデータフレームを生成する
-    # Listでもらっても大変だから、はじめからデータフレームを
-    # 返してもらえば便利～
     boundary_map =   purrr::map_dfr(
       .x = file_names,
       ~
         sf::read_sf(.)
       )
     ) %>% 
-  # 返ってきたデータフレームから取り出す
-  # map_dfr()が返した結果は、そのままだと直接変数指定できない。
-  # 変数として再度引っ張り出さないといけない
   dplyr::mutate(
-    # dplyr::pull()がとっても役立つよ。
-    # varで列を指定。左側から1、2、と指定。
     country = dplyr::pull(.$boundary_map, var = 1),
     ID_0 = dplyr::pull(.$boundary_map, var = 2),
     geometry = dplyr::pull(.$boundary_map, var = 3)
   ) %>% 
-  # 使わない変数を除く
   dplyr::select(-file_names, -boundary_map) %>% 
-  # 都県毎に中心座標を取得する
-  # 都県名を配置するため
+  # obtain centroid of provinces
+  # We use them to place provinces' names.
   dplyr::mutate(
     lon = purrr::map_dbl(
       .x = geometry,
@@ -81,7 +67,7 @@ asean_4_boundary <-
     )
     
   ) 
-# 作図だよ
+# plot
 asean_4_boundary_map <- 
   asean_4_boundary %>% 
   ggplot(
@@ -102,22 +88,21 @@ asean_4_boundary_map <-
     color = "black",
     size = 0.5
   ) +
-  # 都県名を配置する
+  # place provinces' name
   ggrepel::geom_text_repel(
-    # タイだけ取り出す
-    # タイを塗りつぶさないといけないからねぇ。
+    # highlight Thailand
     data = dplyr::filter(
       asean_4_boundary, 
       country == "Thailand"
       ),
     aes(x = lon, y = lat, label = country), 
-    # 黒で塗りつぶす。カラーにする必要ないですな。
+    # Paint in black
     colour = "black",
     nudge_x = -20,
     nudge_y = -25,
     size = 8
     ) + 
-  # 太平洋と書きましょう。
+  # place ocean's name
   annotate("text", 
            label = "Pacific \n ocean", 
            x = 135, 
@@ -135,27 +120,24 @@ asean_4_boundary_map <-
   ) +
   lims(x = c(85, 145), y = c(-15, 45)) +
   theme_void()
-# タイ都県別地図だす
+# Province-level map of Thailand
 Thailand_boundary_province <- 
-  # シェープファイルを読み込む
+  # read shapefiles
   sf::st_read("../shapefiles/shapefiles_asean+4_separated/gadm40_THA_shp/gadm40_THA_1.shp") %>% 
-  # 使う変数だけ選ぶ
-  # シェープファイルには、使わない変数が含まれることがけっこうある
+  # select necessary variables
   dplyr::select(
     COUNTRY, 
     NAME_1, 
     NL_NAME_1, 
     geometry
     ) %>% 
-  # タイ語県名から、タイ語で「県」と書いてある文字列だけを削除する
-  # 地図に書き込む予定だった。が、やめておいたほうがよさそう。
-  dplyr::mutate(
-    NL_NAME_1 = stringr::str_replace_all(
-      .$NL_NAME_1, 
-      "จังหวัด",
-      ""
-      )
-  ) %>% 
+  # dplyr::mutate(
+  #   NL_NAME_1 = stringr::str_replace_all(
+  #     .$NL_NAME_1, 
+  #     "จังหวัด",
+  #     ""
+  #     )
+  # ) %>% 
   dplyr::mutate(
     lon = purrr::map_dbl(
       .x = geometry,
@@ -168,27 +150,26 @@ Thailand_boundary_province <-
         sf::st_coordinates(sf::st_centroid(.))[,2]
     )
   )
-# タイ地図描画
+# plot
 Thailand_boundary_province_map <- 
   Thailand_boundary_province %>% 
   ggplot2::ggplot() +
   geom_sf(
     fill = "transparent"
   ) +
-  # 県名書き込む
+  # add provinces' names
   ggrepel::geom_text_repel(
     aes(x = lon, y = lat, label = NAME_1), 
     colour = "black",
     size = 2
   ) +
-  # ASEAN＋5地図書き込む領域周辺に線をひく
-  # そのほうがかっこういいから。
+  # separate ASEAN＋5 and Thailand
   geom_segment(x = 102, y = 11.25, xend = 106, yend = 11.25, size = 0.5) + 
   geom_segment(x = 102, y = 11.25, xend = 102, yend = 7, size = 0.5) + 
   geom_segment(x = 102, y = 7, xend = 103, yend = 6.5, size = 0.5) + 
   geom_segment(x = 103, y = 6.5, xend = 106, yend = 6.5, size = 0.5) + 
   labs(x = "Longitude", y = "Latitude") +
-  # 縮尺
+  # add scale bar
   ggsn::scalebar(
     x.min = 104,
     x.max = 106.0,
@@ -208,16 +189,16 @@ Thailand_boundary_province_map <-
     ) +
     theme_minimal()
 # https://dichika.hateblo.jp/entry/20110116/1295183973
-# 保存
-# いつものggsave()は使えなさそう
-# 高解像度なpngファイルにしておけば、毎度コンパイルしなくて済む
-# ただし、高解像度(2,400dpi)は本番のみ。日頃は200dpiで十分
+# save
+# resolution
+# 240: daily use
+# 2400: for paper
 png(
   filename = "Thailand_boundary_province_map.png",
   width = 300,
   height = 300,
   units = "mm",
-  res = 240     # ここで解像度を調整する
+  res = 240     # adjust resolution here
 )
 print(Thailand_boundary_province_map)
 print(
@@ -230,5 +211,4 @@ print(
     )
 )
 dev.off()
-# おしまい
-
+# 
