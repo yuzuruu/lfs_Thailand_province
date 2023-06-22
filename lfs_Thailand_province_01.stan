@@ -78,6 +78,7 @@ transformed parameters {
     for(t in 2:TT) {
       // Cauchy分布を使って変化点検出するワザの一部。
       // Stan神が教えてくれた。
+      // Page
       x[t,i] = x[t-1,i] + u + pro_dev[t,i] + s_x[i]*tan(mu_raw[t-1,i]);
     }
   }
